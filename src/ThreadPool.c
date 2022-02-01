@@ -93,6 +93,7 @@ thread_pool_funcs_t *getThreadPoolInternal() { return &pool_funcs; }
 
 bool add_job(user_job_t job, void *arg) {
     job_data_t *data = calloc(1, sizeof(job_data_t));
+    BUG_ON(data == NULL);
     data->job = job;
     data->arg = arg;
     int index = find_suitable_thread();
