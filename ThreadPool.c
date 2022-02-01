@@ -4,6 +4,12 @@
 
 #define THREAD_CAST(x) ((thread_info_t*)(x))
 #define GET_THREAD(index) &pool->ctrl.threads[index]
+#define BUG_ON(x) ({ \
+    if (x) { \
+        fprintf(pool->logfile, "Assertion Failed " #x "\n"); \
+        return false;\
+    }                     \
+})
 
 typedef struct job_data {
     user_job_t job;
@@ -50,8 +56,8 @@ __always_inline static size_t tp_get_available() { return pool->count.available;
 __always_inline static size_t tp_get_busy() { return pool->count.busy; }
 __always_inline static void th_lock(void *thread) { pthread_spin_lock(&THREAD_CAST(thread)->lock_); }
 __always_inline static void th_unlock(void *thread) { pthread_spin_unlock(&THREAD_CAST(thread)->lock_); }
-__always_inline static void th_post_job(void *thread) { sem_post(&THREAD_CAST(thread)->sem); }
-__always_inline static void th_wait_on_job(void *thread) { sem_wait(&THREAD_CAST(thread)->sem); }
+__always_inline static void th_post_job(void *thread) { sem_post(&THREAD_CAST(thread)->sem); ++THREAD_CAST(thread)->task_count; }
+__always_inline static void th_wait_on_job(void *thread) { sem_wait(&THREAD_CAST(thread)->sem); --THREAD_CAST(thread)->task_count; }
 __always_inline static tid_t th_get_tid(void *thread) { return THREAD_CAST(thread)->tid; }
 __always_inline static size_t th_get_total_jobs(void *thread) { return THREAD_CAST(thread)->total_jobs; }
 __always_inline static void tp_destroy() {
@@ -89,14 +95,16 @@ bool add_job(user_job_t job, void *arg) {
     job_data_t *data = calloc(1, sizeof(job_data_t));
     data->job = job;
     data->arg = arg;
-    ThreadPool->lock();
     int index = find_suitable_thread();
+    BUG_ON(index == -1);
     thread_info_t *thread = GET_THREAD(index);
+    BUG_ON(thread == NULL);
+    ThreadPool->lock();
     g_queue_push_tail(thread->queue, data);
     ThreadPool->thread.post_job(thread);
-    ++thread->total_jobs;
     ThreadPool->unlock();
     fprintf(pool->logfile, "New Job Posted to the ThreadPool. Requesting Tid: %ld\n", syscall(SYS_gettid));
+    return true;
 }
 
 bool initialize_thread_pool(size_t pool_size) {
@@ -104,41 +112,33 @@ bool initialize_thread_pool(size_t pool_size) {
     pool->count.total = pool_size;
     pool->count.available = pool_size;
     pool->ctrl.threads = calloc(pool_size, sizeof(thread_info_t));
+    BUG_ON(pool->ctrl.threads == NULL);
     pthread_spin_init(&pool->ctrl.lock, 0);
     for (int i = 0; i < pool->count.total; i++) {
         pool->ctrl.threads[i].queue = g_queue_new();
-        sem_init(&pool->ctrl.threads[i].sem, 0, 0);
+        BUG_ON(pool->ctrl.threads[i].queue == NULL);
+        BUG_ON(sem_init(&pool->ctrl.threads[i].sem, 0, 0) != 0);
         g_queue_init(pool->ctrl.threads[i].queue);
-        pthread_create(&pool->ctrl.threads[i].handle, NULL, event_loop, NULL);
+        BUG_ON(pthread_create(&pool->ctrl.threads[i].handle, NULL, event_loop, NULL) != 0);
     }
+    return true;
 }
 
 int find_suitable_thread() {
-    int min = pool->ctrl.threads[0].task_count;
-    int index = 0; // We don't want any invalid value here
-    if (pool->count.available == false) {
-        // None of the threads is available so lets find the thread with minimum load
-        for (int i = 1; i < pool->count.total; i++) {
+    int index = 0;
+    ThreadPool->lock();
+    int min = pool->ctrl.threads[index].task_count;
+    if (min != 0) {
+        for (int i = 1; i < pool->count.total; ++i) {
             if (min > pool->ctrl.threads[i].task_count) {
                 index = i;
-                ++pool->ctrl.threads[i].task_count;
-                ++pool->count.busy;
-                return index;
-            }
-        }
-    } else {
-        // Let's find the thread with no active tasks
-        for (int i = 0; i < pool->count.total; i++) {
-            if (pool->ctrl.threads[i].task_count == 0
-                && pool->ctrl.threads[i].is_working == true) {
-                index  = i;
-                ++pool->ctrl.threads[i].task_count;
-                ++pool->count.busy;
-                --pool->count.available;
-                return index;
+                min = pool->ctrl.threads[i].task_count;
             }
         }
     }
+    ++pool->ctrl.threads[index].task_count;
+    ++pool->ctrl.threads[index].total_jobs;
+    ThreadPool->unlock();
     return index;
 }
 
