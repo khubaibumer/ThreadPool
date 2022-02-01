@@ -7,7 +7,6 @@
 void* func1(void* arg) {
     printf("Routine Called! Tid: %ld\n", syscall(SYS_gettid));
     printf("arg: %s\n", (char*)arg);
-    usleep(500);
 }
 
 int main() {
