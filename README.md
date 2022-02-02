@@ -15,7 +15,6 @@ Small Light Weight ThreadPool
 
 > ThreadPool->destroy()
 
-
 ## ThreadPool Functions
 ### 1. Counters
 > ThreadPool->get_total()
