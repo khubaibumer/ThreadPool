@@ -196,8 +196,9 @@ int find_suitable_thread() {
 void set_logger(FILE *logfile) {
     if (logfile == NULL) {
         pool->logfile = stdout;
+    } else {
+        pool->logfile = logfile;
     }
-    pool->logfile = logfile;
 }
 
 static void* event_loop(void *args) {
