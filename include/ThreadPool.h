@@ -33,7 +33,7 @@ typedef struct thread_pool_funcs {
     struct {
         void (*lock) (void*);
         void (*unlock) (void*);
-        void (*post_job) (void*);
+        void (*wake_up) (void*);
         void (*wait_job) (void*);
         size_t (*jobs_count) (void*);
     } thread;

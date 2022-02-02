@@ -65,7 +65,7 @@ __always_inline static void tp_destroy() {
     for (int i = 0; i < pool->count.total; i++) {
         thread_info_t *thread  = GET_THREAD(i);
         thread->is_working = false;
-        ThreadPool->thread.post_job(thread);
+        ThreadPool->thread.wake_up(thread);
         fprintf(pool->logfile, "Destroying Thread TID: %ld Total Jobs taken: %lu\n", thread->tid, thread->total_jobs);
         pthread_cancel(thread->handle);
     }
@@ -84,7 +84,7 @@ static thread_pool_funcs_t pool_funcs = {
         .pool.unlock = tp_unlock,
         .thread.lock = th_lock,
         .thread.unlock = th_unlock,
-        .thread.post_job = th_post_job,
+        .thread.wake_up = th_post_job,
         .thread.wait_job = th_wait_on_job,
         .thread.jobs_count = th_get_total_jobs,
         .init = initialize_thread_pool,
@@ -130,7 +130,7 @@ bool add_job(user_job_t job, void *arg) {
     }
     ThreadPool->lock();
     ThreadPool->queue.push_back(thread->queue, data);
-    ThreadPool->thread.post_job(thread);
+    ThreadPool->thread.wake_up(thread);
     ThreadPool->unlock();
     fprintf(pool->logfile, "New Job Posted to the ThreadPool. Requesting Tid: %ld\n", syscall(SYS_gettid));
     return true;
