@@ -12,7 +12,7 @@ void* func1(void* arg) {
 int main() {
 
     if(ThreadPool->set_queue_functions((queue_new_t) g_queue_new, (queue_init_t) g_queue_init,
-                                       (queue_push_back_t) g_queue_push_tail, (queue_pop_head) g_queue_pop_head) == false) {
+                                       (queue_push_back_t) g_queue_push_tail, (queue_pop_head_t) g_queue_pop_head) == false) {
         perror("Unable to set queue functions\n");
         exit(0);
     }

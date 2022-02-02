@@ -18,7 +18,7 @@ typedef void* (*user_job_t) (void*);
 typedef void* (*queue_new_t) (void);
 typedef void (*queue_init_t) (void *head);
 typedef void (*queue_push_back_t) (void *head, void *data);
-typedef void* (*queue_pop_head) (void *head);
+typedef void* (*queue_pop_head_t) (void *head);
 
 typedef struct thread_pool_funcs {
     struct {
@@ -44,7 +44,7 @@ typedef struct thread_pool_funcs {
     void (*unlock) (void);
     bool (*init) (size_t thread_count);
     void (*destroy) (void);
-    bool (*set_queue_functions) (queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head pop_head);
+    bool (*set_queue_functions) (queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head_t pop_head);
     struct {
         bool are_funcs_set;
         void *(*new)(void);

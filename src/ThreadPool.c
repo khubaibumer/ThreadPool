@@ -48,7 +48,7 @@ int find_suitable_thread();
 bool add_job(user_job_t, void*);
 static void* event_loop(void *args);
 bool initialize_thread_pool(size_t pool_size);
-static bool tp_set_queue_funcs(queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head pop_head);
+static bool tp_set_queue_funcs(queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head_t pop_head);
 
 __always_inline static void tp_lock() { pthread_spin_lock(&pool->ctrl.lock); }
 __always_inline static void tp_unlock() { pthread_spin_unlock(&pool->ctrl.lock); }
@@ -93,7 +93,7 @@ static thread_pool_funcs_t pool_funcs = {
 };
 thread_pool_funcs_t *getThreadPoolInternal() { return &pool_funcs; }
 
-__always_inline static bool tp_set_queue_funcs(queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head pop_head) {
+__always_inline static bool tp_set_queue_funcs(queue_new_t new, queue_init_t init, queue_push_back_t push_back, queue_pop_head_t pop_head) {
     if (pool != NULL || ThreadPool->queue.are_funcs_set == true) {
         perror("ThreadPool is already initialized\n");
         return false;
