@@ -119,9 +119,15 @@ bool add_job(user_job_t job, void *arg) {
     data->job = job;
     data->arg = arg;
     int index = find_suitable_thread();
-    BUG_ON(index == -1);
+    if(index == -1) {
+        free(data);
+        return false;
+    }
     thread_info_t *thread = GET_THREAD(index);
-    BUG_ON(thread == NULL);
+    if(thread == NULL) {
+        free(data);
+        return false;
+    }
     ThreadPool->lock();
     ThreadPool->queue.push_back(thread->queue, data);
     ThreadPool->thread.post_job(thread);
@@ -138,15 +144,33 @@ bool initialize_thread_pool(size_t pool_size) {
     pool->count.total = pool_size;
     pool->count.available = pool_size;
     pool->ctrl.threads = calloc(pool_size, sizeof(thread_info_t));
-    BUG_ON(pool->ctrl.threads == NULL);
+    if (pool->ctrl.threads == NULL) {
+        fprintf(pool->logfile, "Assertion Failed " "pool->ctrl.threads == NULL" "\n");
+        free(pool);
+        return false;
+    }
     pthread_spin_init(&pool->ctrl.lock, 0);
     for (int i = 0; i < pool->count.total; i++) {
-        pool->ctrl.threads[i].queue = g_queue_new();
         pool->ctrl.threads[i].queue = ThreadPool->queue.new();
-        BUG_ON(pool->ctrl.threads[i].queue == NULL);
-        BUG_ON(sem_init(&pool->ctrl.threads[i].sem, 0, 0) != 0);
+        if (pool->ctrl.threads[i].queue == NULL) {
+            fprintf(pool->logfile, "Assertion Failed " "pool->ctrl.threads[i].queue == NULL" "\n");
+            free(pool->ctrl.threads);
+            free(pool);
+            return false;
+        }
+        if(sem_init(&pool->ctrl.threads[i].sem, 0, 0) != 0) {
+            fprintf(pool->logfile, "Assertion Failed " "sem_init(&pool->ctrl.threads[i].sem, 0, 0) != 0" "\n");
+            free(pool->ctrl.threads);
+            free(pool);
+            return false;
+        }
         ThreadPool->queue.init(pool->ctrl.threads[i].queue);
-        BUG_ON(pthread_create(&pool->ctrl.threads[i].handle, NULL, event_loop, NULL) != 0);
+        if(pthread_create(&pool->ctrl.threads[i].handle, NULL, event_loop, NULL) != 0) {
+            fprintf(pool->logfile, "Assertion Failed " "pthread_create(&pool->ctrl.threads[i].handle, NULL, event_loop, NULL) != 0" "\n");
+            free(pool->ctrl.threads);
+            free(pool);
+            return false;
+        }
     }
     return true;
 }
