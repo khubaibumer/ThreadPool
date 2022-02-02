@@ -66,7 +66,7 @@ __always_inline static void tp_destroy() {
         thread_info_t *thread  = GET_THREAD(i);
         thread->is_working = false;
         ThreadPool->thread.post_job(thread);
-        fprintf(pool->logfile, "Destroying Thread TID: %ld Total Jobs taken: %ld\n", thread->tid, thread->total_jobs);
+        fprintf(pool->logfile, "Destroying Thread TID: %lu Total Jobs taken: %ld\n", thread->tid, thread->total_jobs);
         pthread_cancel(thread->handle);
     }
 }
