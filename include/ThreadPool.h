@@ -12,10 +12,6 @@ typedef unsigned char bool;
 #define true 1
 #define false 0
 #endif
-//void *(*queue_new)(void);
-//void (*queue_init)(void *);
-//void (*queue_push_back)(void *head, void *data);
-//void *(*pop_head) (void *head);
 
 typedef long tid_t;
 typedef void* (*user_job_t) (void*);
