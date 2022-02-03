@@ -2,8 +2,8 @@
 Small Light Weight ThreadPool
 
 [![CodeFactor](https://www.codefactor.io/repository/github/khubaibumer/threadpool/badge)](https://www.codefactor.io/repository/github/khubaibumer/threadpool)
-
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4cbbe30fef1843929bae962f6eee8deb)](https://www.codacy.com/gh/khubaibumer/ThreadPool/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=khubaibumer/ThreadPool&amp;utm_campaign=Badge_Grade)
+[![CircleCI](https://circleci.com/gh/khubaibumer/ThreadPool/tree/master.svg?style=svg)](https://circleci.com/gh/khubaibumer/ThreadPool/tree/master)
 
 ## Initialization
 
